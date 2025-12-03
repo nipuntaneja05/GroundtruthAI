@@ -200,6 +200,8 @@ SDXL-Turbo (HuggingFace free inference)
 
 Stable Diffusion 1.5 (fallback)
 
+Or any open source free model availaible to use as all of the given names are either paid or closed source.
+
 Caption Generation:
 
 GPT-4o-mini
