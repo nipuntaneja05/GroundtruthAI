@@ -1,77 +1,96 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// ⚠️ Ensure your API Key is in .env.local as GEMINI_API_KEY
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export const maxDuration = 60; // Allow 60 seconds
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Parse FormData (Files + Text)
     const formData = await req.formData();
-    const prompt = formData.get("prompt") as string;
+    const basePrompt = formData.get("prompt") as string;
     const productImage = formData.get("productImage") as File | null;
     
-    let finalPrompt = prompt;
+    // Force 4 images as requested
+    const numImages = 4;
+    
+    let productDescription = "";
 
-    // 2. "Use the Images": If a product image was uploaded, ask Gemini to describe it
-    // This satisfies the "Gemini uses the image" requirement.
+    // --- STEP 1: VISION (Describe the product) ---
     if (productImage && process.env.GEMINI_API_KEY) {
       try {
-        console.log("Analyzing product image with Gemini Vision...");
-        
-        // Convert File to Base64 for Gemini
         const arrayBuffer = await productImage.arrayBuffer();
         const base64Data = Buffer.from(arrayBuffer).toString("base64");
-
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         const result = await model.generateContent([
-          "Describe this product visually in 2 sentences so an AI artist can recreate it perfectly. Focus on colors, materials, and shape.",
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: productImage.type,
-            },
-          },
+          "Describe this product visually in 1 short sentence (focus on color, material, shape).",
+          { inlineData: { data: base64Data, mimeType: productImage.type } },
         ]);
-        
-        const description = result.response.text();
-        console.log("Gemini Vision Description:", description);
-
-        // Enhance the prompt with Gemini's vision
-        finalPrompt = `${prompt}. The product looks like: ${description}`;
-      } catch (visionError) {
-        console.error("Vision step failed, falling back to text prompt only:", visionError);
+        productDescription = result.response.text();
+      } catch (e) {
+        console.error("Vision failed");
       }
     }
 
-    // 3. Generate the Image
-    // Since Gemini Image API (Imagen 3) is often restricted/404s on free tiers,
-    // we use Pollinations (Flux/SDXL) as the "Renderer" driven by Gemini's brain.
-    // This is the safest way to ensure you have an image for the demo.
+    // --- STEP 2: BRAINSTORMING (The "System Prompting" part) ---
+    // We ask Gemini to invent 4 DISTINCT art styles.
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    console.log("Generating with prompt:", finalPrompt);
-    
-    const seed = Math.floor(Math.random() * 100000);
-    // Pollinations URL (Free, fast, unlimited)
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+    const variationPrompt = `
+      I need 4 distinct AI image generation prompts for an ad campaign.
+      
+      User's Idea: "${basePrompt}"
+      Product Visuals: "${productDescription}"
+      
+      Create 4 TOTALLY DIFFERENT variations:
+      1. A clean, minimalist Studio Product Shot.
+      2. A dynamic "In-Action" or Lifestyle shot.
+      3. A futuristic / creative artistic background.
+      4. A luxury / high-end cinematic shot.
+      
+      Output ONLY the 4 prompts separated strictly by "|||". Do not add numbering or labels.
+    `;
 
-    // Fetch the image to convert to Base64 (so your frontend treats it like a file)
-    // or just return the URL if your frontend <img src> can handle remote URLs.
-    // Here we return the URL directly for speed, wrapped in the format your page expects.
-    
+    let prompts: string[] = [];
+    try {
+      const result = await model.generateContent(variationPrompt);
+      const rawText = result.response.text();
+      // Split by our separator to get the 4 unique prompts
+      prompts = rawText.split("|||").map(p => p.trim()).filter(p => p.length > 0);
+    } catch (e) {
+      // Fallback if Gemini text generation fails: just use base prompt 4 times
+      prompts = [basePrompt, basePrompt, basePrompt, basePrompt];
+    }
+
+    // Ensure we have exactly 4 (fill with duplicates if split failed)
+    while (prompts.length < 4) {
+      prompts.push(basePrompt + " high quality, 8k");
+    }
+
+    // --- STEP 3: RENDER (Pollinations) ---
+    const imageLinks: string[] = [];
+
+    // Loop through the UNIQUE prompts
+    for (let i = 0; i < numImages; i++) {
+      // Use the specific unique prompt for this iteration
+      const specificPrompt = prompts[i] || basePrompt;
+      
+      // Still add a random seed for extra entropy
+      const seed = Math.floor(Math.random() * 1000000) + i;
+      
+      // Generate URL
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(specificPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+      
+      imageLinks.push(imageUrl);
+    }
+
     return NextResponse.json({
-      images: [imageUrl], 
-      promptUsed: finalPrompt
+      images: imageLinks,
+      promptUsed: basePrompt 
     });
 
   } catch (error: any) {
-    console.error("Route Error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate image. " + error.message }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

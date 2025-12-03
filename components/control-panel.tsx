@@ -129,7 +129,7 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
         </label>
 
         <p className="text-xs text-slate-500 mt-3">
-          💡 You will later connect this to your image generation API. For now, these are front-end only.
+          {/* 💡 You will later connect this to your image generation API. For now, these are front-end only. */}
         </p>
       </div>
 

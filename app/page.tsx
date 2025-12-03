@@ -16,61 +16,6 @@ export default function Home() {
     captionPrompt: "",
   })
 
-  const handleGenerate = async (data: any) => {
-    setIsGenerating(true)
-    setGeneratedCreatives([])
-
-    try {
-      // 1. Construct the Prompt (Keep your existing logic)
-      const imagePrompt = `Create a ${data.style.toLowerCase()} advertisement for ${data.brandName}. Product: ${data.tagline}. Campaign: ${data.campaignGoal}. Style: Professional, high-quality, campaign-ready. Aspect ratio: ${data.aspectRatio}. Mood: trendy, modern, engaging.`
-
-      // 2. Build FormData
-      const form = new FormData()
-      form.append("prompt", imagePrompt)
-      form.append("aspectRatio", data.aspectRatio || "1:1")
-      form.append("numImages", "1") // Hackathon speed: Generate 1 at a time to be safe
-
-      // Append files if they exist
-      if (data.brandLogo) form.append("brandLogo", data.brandLogo)
-      if (data.productImage) form.append("productImage", data.productImage)
-
-      console.log("[v0] Sending to API...")
-
-      // 3. Fetch - NOTE: Do NOT set 'Content-Type': 'multipart/form-data' headers manually!
-      const response = await fetch("/api/generate-gemini", {
-        method: "POST",
-        body: form,
-      })
-
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || "Generation failed")
-      }
-
-      const { images } = await response.json()
-
-      // 4. Map response to your UI
-      const newCreatives = images.map((imgUrl: string, i: number) => ({
-        id: Date.now() + i,
-        image: imgUrl,
-        style: data.style,
-        aspectRatio: data.aspectRatio,
-        caption: `Generated for ${data.brandName}`,
-        dimensions: "1024x1024",
-        saved: false,
-      }))
-
-      setGeneratedCreatives(newCreatives)
-      setLastRun("now")
-
-    } catch (error: any) {
-      console.error("Error:", error)
-      alert(error.message)
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
   const getDimensions = (ratio: string): string => {
     const ratioMap: Record<string, string> = {
       "1:1": "1024×1024",
@@ -78,7 +23,79 @@ export default function Home() {
       "16:9": "1440×810",
       "9:16": "810×1440",
     }
-    return ratioMap[ratio.split(" ")[0]] || "1024×1024"
+    // Safety check: if ratio is undefined, default to 1:1
+    const key = ratio ? ratio.split(" ")[0] : "1:1"
+    return ratioMap[key] || "1024×1024"
+  }
+
+  const handleGenerate = async (data: any) => {
+    setIsGenerating(true)
+    setGeneratedCreatives([])
+
+    try {
+      // 1. Construct the Base Prompt
+      const imagePrompt = `Create a ${data.style?.toLowerCase() || "modern"} advertisement for ${data.brandName}. Product: ${data.tagline}. Campaign: ${data.campaignGoal}. Style: Professional, high-quality, campaign-ready. Aspect ratio: ${data.aspectRatio}. Mood: trendy, modern, engaging.`
+
+      const captionPrompt = `Write a ${data.tone || "professional"} ad caption for ${data.brandName}.`
+
+      // 2. Build FormData
+      const form = new FormData()
+      form.append("prompt", imagePrompt)
+      form.append("aspectRatio", data.aspectRatio || "1:1")
+      
+      // ⚡ UPDATE: Request 4 variations explicitly (or use UI selection)
+      // This triggers the loop in your backend to generate 4 unique styles
+      form.append("numImages", data.variations ? String(data.variations) : "4")
+
+      // Append files if they exist
+      if (data.brandLogo) form.append("brandLogo", data.brandLogo)
+      if (data.productImage) form.append("productImage", data.productImage)
+
+      console.log("[v0] Sending to API (Requesting 4 variations)...")
+
+      // 3. Fetch
+      const response = await fetch("/api/generate-gemini", {
+        method: "POST",
+        body: form,
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: "Unknown Error" }))
+        throw new Error(err.error || "Generation failed")
+      }
+
+      const { images } = await response.json()
+
+      if (!images || images.length === 0) {
+        throw new Error("No images were returned from the API")
+      }
+
+      // 4. Map response to your UI
+      const newCreatives = images.map((imgUrl: string, i: number) => ({
+        id: Date.now() + i,
+        image: imgUrl,
+        style: data.style, // Each image technically has a different style now, but we keep the user selection for reference
+        aspectRatio: data.aspectRatio,
+        caption: `Variation ${i + 1}: Generated for ${data.brandName}`, 
+        dimensions: getDimensions(data.aspectRatio),
+        saved: false,
+      }))
+
+      setGeneratedCreatives(newCreatives)
+      setLastRun("now")
+      
+      // Update inspector to show what we sent
+      setInspectorData({
+        imagePrompt,
+        captionPrompt,
+      })
+
+    } catch (error: any) {
+      console.error("Error:", error)
+      alert("Generation failed: " + error.message)
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (

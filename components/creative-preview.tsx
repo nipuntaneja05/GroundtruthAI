@@ -40,7 +40,7 @@ export default function CreativePreview({ creatives, isGenerating, setCreatives 
         <h2 className="text-xl md:text-2xl font-bold text-slate-100">Creative Preview</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-slate-400 px-3 py-1.5 rounded-full bg-slate-800/50 border border-slate-700/50">
-            Model: SDXL-Turbo (Open Source)
+            Powered by Black Forest Labs FLUX.1(Generation) and GEMINI-1.5(Vision)
           </span>
         </div>
       </div>
