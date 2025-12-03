@@ -267,9 +267,9 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
             "Generate Creatives"
           )}
         </button>
-        <button className="w-full px-4 py-2 rounded-lg glass-light text-slate-200 font-semibold hover:bg-white/10 text-sm">
+        {/* <button className="w-full px-4 py-2 rounded-lg glass-light text-slate-200 font-semibold hover:bg-white/10 text-sm">
           Quick Preview
-        </button>
+        </button> */}
       </div>
 
       {/* Status */}

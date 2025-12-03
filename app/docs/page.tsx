@@ -22,14 +22,14 @@ export default function DocsPage() {
           </div>
           <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 my-4">
             <p className="text-slate-300">
-              Uses open-source image generation models (SDXL-Turbo / Stable Diffusion) and LLMs for caption generation,
+              Uses open-source image generation models (FLUX.1 & GEMINI-1.5) and LLMs for caption generation,
               packaged inside a beautiful, intuitive interface.
             </p>
           </div>
           <div>
             <h3 className="text-lg font-semibold text-indigo-400 mb-2">Built for Innovation</h3>
             <p className="text-slate-300">
-              This project was built for Hackathon 2025 – Generative AI & Marketing Tech Track (H-003)
+              This project was built for GroundTruth AI Hackathon 2025 – Generative AI & Marketing Tech Track (H-003)
             </p>
           </div>
         </div>
@@ -117,14 +117,15 @@ export default function DocsPage() {
 
           <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6">
             <h3 className="text-lg font-bold text-indigo-400 mb-3">Step 2: Processing</h3>
-            <p className="text-slate-300 mb-4">Two AI systems work together:</p>
+            <p className="text-slate-300 mb-4">Multi Modal AI system works together:</p>
             <div className="space-y-4">
               <div className="ml-4 border-l-2 border-indigo-500 pl-4">
                 <h4 className="font-semibold text-indigo-300 mb-2">Image Generation Pipeline</h4>
                 <p className="text-slate-400 text-sm mb-2">Powered by open-source models:</p>
                 <ul className="text-slate-300 space-y-1 text-sm">
-                  <li>• SDXL Turbo (fastest)</li>
-                  <li>• Stable Diffusion (fallback)</li>
+                  <li>• GEMINI-1.5 (VISION)</li>
+                  <li>• FLUX.1 (GENERATION)</li>
+                  <li>• NOTE: These models were used as high performing models like midjourney,DALL-E are paid (Otherwise performance of images being generated can be drastically better)</li>
                 </ul>
               </div>
               <div className="ml-4 border-l-2 border-green-500 pl-4">
@@ -175,7 +176,7 @@ export default function DocsPage() {
               title: "AI Creative Preview",
               desc: "Responsive grid with hover effects, metadata tags, and download options",
             },
-            { title: "Prompt Inspector", desc: "See exact prompts sent to models for debugging and transparency" },
+            // { title: "Prompt Inspector", desc: "See exact prompts sent to models for debugging and transparency" },
             { title: "Caption Generation", desc: "AI-powered captions matching your brand tone and guidelines" },
           ].map((feature, i) => (
             <div
@@ -215,6 +216,7 @@ export default function DocsPage() {
                 <li>• Next.js API Routes</li>
                 <li>• Node.js Runtime</li>
                 <li>• HuggingFace Inference</li>
+                <li>• Google Gen-AI</li>
               </ul>
             </div>
 
@@ -223,9 +225,9 @@ export default function DocsPage() {
                 <span className="text-lg">🤖</span> AI Models
               </h4>
               <ul className="space-y-2 text-slate-300 text-sm">
-                <li>• SDXL-Turbo (HF Inference)</li>
-                <li>• Stable Diffusion</li>
-                <li>• LLMs for Captions</li>
+                <li>• GEMINI-1.5(Vision)</li>
+                <li>• FLUX.1(Generation)</li>
+                <li>• LLMs for Captions(Gemini-pro)</li>
               </ul>
             </div>
 

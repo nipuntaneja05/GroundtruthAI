@@ -28,32 +28,26 @@ export default function Home() {
     return ratioMap[key] || "1024×1024"
   }
 
-  const handleGenerate = async (data: any) => {
+ const handleGenerate = async (data: any) => {
     setIsGenerating(true)
     setGeneratedCreatives([])
 
     try {
-      // 1. Construct the Base Prompt
-      const imagePrompt = `Create a ${data.style?.toLowerCase() || "modern"} advertisement for ${data.brandName}. Product: ${data.tagline}. Campaign: ${data.campaignGoal}. Style: Professional, high-quality, campaign-ready. Aspect ratio: ${data.aspectRatio}. Mood: trendy, modern, engaging.`
+      // 1. Construct Prompt
+      const imagePrompt = `Create a ${data.style?.toLowerCase() || "modern"} advertisement for ${data.brandName}. Product: ${data.tagline}. Campaign: ${data.campaignGoal}. Style: Professional, high-quality. Aspect ratio: ${data.aspectRatio}. Mood: trendy, modern.`
 
-      const captionPrompt = `Write a ${data.tone || "professional"} ad caption for ${data.brandName}.`
-
-      // 2. Build FormData
       const form = new FormData()
       form.append("prompt", imagePrompt)
       form.append("aspectRatio", data.aspectRatio || "1:1")
-      
-      // ⚡ UPDATE: Request 4 variations explicitly (or use UI selection)
-      // This triggers the loop in your backend to generate 4 unique styles
-      form.append("numImages", data.variations ? String(data.variations) : "4")
+      // Force 4 variations
+      form.append("numImages", data.variations ? String(data.variations) : "4") 
 
-      // Append files if they exist
       if (data.brandLogo) form.append("brandLogo", data.brandLogo)
       if (data.productImage) form.append("productImage", data.productImage)
 
-      console.log("[v0] Sending to API (Requesting 4 variations)...")
+      console.log(" Sending to API...")
 
-      // 3. Fetch
+      // 2. Fetch
       const response = await fetch("/api/generate-gemini", {
         method: "POST",
         body: form,
@@ -64,35 +58,46 @@ export default function Home() {
         throw new Error(err.error || "Generation failed")
       }
 
-      const { images } = await response.json()
+      const dataResponse = await response.json()
 
-      if (!images || images.length === 0) {
-        throw new Error("No images were returned from the API")
+      // ⚡️ ROBUST FIX: Look for 'variations' OR 'images'
+      // This prevents the app from crashing if the backend format changes
+      const items = dataResponse.variations || dataResponse.images || [];
+
+      if (!items || items.length === 0) {
+        throw new Error("No images returned from API")
       }
 
-      // 4. Map response to your UI
-      const newCreatives = images.map((imgUrl: string, i: number) => ({
-        id: Date.now() + i,
-        image: imgUrl,
-        style: data.style, // Each image technically has a different style now, but we keep the user selection for reference
-        aspectRatio: data.aspectRatio,
-        caption: `Variation ${i + 1}: Generated for ${data.brandName}`, 
-        dimensions: getDimensions(data.aspectRatio),
-        saved: false,
-      }))
+      // 3. Map Data (Handles both Strings and Objects)
+      const newCreatives = items.map((item: any, i: number) => {
+        // Check if item is a simple URL string or a rich object
+        const isObject = typeof item === 'object' && item !== null;
+        
+        return {
+          id: Date.now() + i,
+          // If Object -> use item.image. If String -> use item.
+          image: isObject ? item.image : item,
+          // If Object -> use item.caption. If String -> use Fallback Caption.
+          caption: (isObject && item.caption) ? item.caption : `Ad variation ${i+1} for ${data.brandName}. optimized for high engagement.`,
+          description: (isObject && item.description) ? item.description : "",
+          style: data.style,
+          aspectRatio: data.aspectRatio,
+          dimensions: getDimensions(data.aspectRatio),
+          saved: false,
+        }
+      })
 
       setGeneratedCreatives(newCreatives)
       setLastRun("now")
-      
-      // Update inspector to show what we sent
+
       setInspectorData({
         imagePrompt,
-        captionPrompt,
+        captionPrompt: `Write a catchy caption for ${data.brandName}`,
       })
 
     } catch (error: any) {
       console.error("Error:", error)
-      alert("Generation failed: " + error.message)
+      alert("Error: " + error.message)
     } finally {
       setIsGenerating(false)
     }
