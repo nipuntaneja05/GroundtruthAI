@@ -1,3 +1,30 @@
+/**
+ * 🤖 MULTI-MODAL AGENTIC WORKFLOW
+ * ------------------------------------------------------------------
+ * This API route implements a chained AI pipeline using a "Orchestrator-Workers" pattern.
+ * * ARCHITECTURE:
+ * 1. 👁️ VISION AGENT (Gemini 1.5 Flash): 
+ * - Ingests the raw binary data of the uploaded product image.
+ * - Performs semantic visual analysis to extract key features (color, texture, form) 
+ * - Output: A grounded visual descriptor string to prevent hallucination.
+ *
+ * 2. 🧠 CREATIVE DIRECTOR AGENT (Gemini 1.5 Flash):
+ * - Receives User Prompt + Vision Data.
+ * - Uses System Prompting to generate distinct art styles and creative directions.
+ * - Output: 4 highly detailed, style-specific generation prompts.(Limited to 4 due to to API constraints)
+ *
+ * 3. 🎨 RENDERER AGENT (Black Forest Labs FLUX.1):
+ * - Runs in parallel threads via Pollinations inference layer.
+ * - Takes the detailed prompts and performs latent diffusion to generate high-fidelity assets.
+ * - Output: 4 unique image URLs.
+ *
+ * 4. ✍️ COPYWRITER AGENT (Gemini Pro):
+ * - Analyzes the specific art style of each variation.
+ * - Generates context-aware marketing copy and captions.
+ * - Output: JSON object containing captions and descriptions.
+ * ------------------------------------------------------------------
+ */
+
 "use client"
 
 import { useState } from "react"
