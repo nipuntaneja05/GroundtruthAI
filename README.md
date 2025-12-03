@@ -213,3 +213,6 @@ Storage
 In-memory for demo
 
 ZIP generation using JS/Python libraries
+
+NOTE:
+The system prompting on LLM is done really well to enhance the efficiency of the outputs being generated
