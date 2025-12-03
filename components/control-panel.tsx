@@ -22,8 +22,8 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
   const [tone, setTone] = useState("energetic")
   const [guidelines, setGuidelines] = useState("Energetic, playful, Gen Z friendly. Mention limited-time 20% discount.")
   const [language, setLanguage] = useState("English")
-  const [brandLogo, setBrandLogo] = useState<string | null>(null)
-  const [productImage, setProductImage] = useState<string | null>(null)
+  const [brandLogo, setBrandLogo] = useState<File | null>(null)
+  const [productImage, setProductImage] = useState<File | null>(null)
 
   const styles = ["Minimal", "Bold", "Luxury", "Playful", "Tech", "Organic"]
   const aspectRatios = ["1:1 Square", "4:5 Portrait", "16:9 Landscape", "9:16 Story"]
@@ -46,6 +46,8 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
       tone,
       guidelines,
       language,
+      brandLogo,
+      productImage,
     })
   }
 
@@ -93,7 +95,12 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
                 </>
               )}
             </div>
-            <input type="file" className="hidden" onChange={(e) => setBrandLogo(e.target.files?.[0]?.name || null)} />
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => setBrandLogo(e.target.files?.[0] || null)}
+            />
           </div>
         </label>
 
@@ -115,7 +122,8 @@ export default function ControlPanel({ onGenerate, isGenerating, lastRun, onTogg
             <input
               type="file"
               className="hidden"
-              onChange={(e) => setProductImage(e.target.files?.[0]?.name || null)}
+              accept="image/*"
+              onChange={(e) => setProductImage(e.target.files?.[0] || null)}
             />
           </div>
         </label>

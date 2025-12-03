@@ -48,8 +48,36 @@ export default function CreativePreview({ creatives, isGenerating, setCreatives 
       {isGenerating ? (
         <>
           <div className="mb-6">
-            <p className="text-sm text-slate-400 mb-4">Creating your ad creatives...</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{shimmerCards}</div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" style={{ animationDelay: "0.2s" }} />
+                <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" style={{ animationDelay: "0.4s" }} />
+              </div>
+              <p className="text-sm text-slate-400">Generating {creatives.length} of 4 images...</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {creatives.map((creative, index) => (
+                <div
+                  key={creative.id}
+                  className="group rounded-xl overflow-hidden glass p-3 animate-fade-in"
+                >
+                  <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800">
+                    <img
+                      src={creative.image}
+                      alt={`Creative ${creative.id}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-black/50 backdrop-blur text-xs font-semibold text-slate-100">
+                      {creative.style} · {creative.aspectRatio}
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-300 line-clamp-2 leading-snug">{creative.caption}</p>
+                  <p className="text-xs text-slate-500 mt-2">#{index + 1} of {creatives.length} · {creative.dimensions}</p>
+                </div>
+              ))}
+              {shimmerCards.slice(creatives.length)}
+            </div>
           </div>
         </>
       ) : creatives.length === 0 ? (

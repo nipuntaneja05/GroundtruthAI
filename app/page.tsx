@@ -18,56 +18,54 @@ export default function Home() {
 
   const handleGenerate = async (data: any) => {
     setIsGenerating(true)
+    setGeneratedCreatives([])
 
     try {
+      // 1. Construct the Prompt (Keep your existing logic)
       const imagePrompt = `Create a ${data.style.toLowerCase()} advertisement for ${data.brandName}. Product: ${data.tagline}. Campaign: ${data.campaignGoal}. Style: Professional, high-quality, campaign-ready. Aspect ratio: ${data.aspectRatio}. Mood: trendy, modern, engaging.`
 
-      const captionPrompt = `Write a ${data.tone} ad caption for ${data.brandName}'s ${data.tagline}. Guidelines: ${data.guidelines}. Language: ${data.language}. Keep it under 3 lines.`
+      // 2. Build FormData
+      const form = new FormData()
+      form.append("prompt", imagePrompt)
+      form.append("aspectRatio", data.aspectRatio || "1:1")
+      form.append("numImages", "1") // Hackathon speed: Generate 1 at a time to be safe
 
-      console.log("[v0] Sending generation request to API")
+      // Append files if they exist
+      if (data.brandLogo) form.append("brandLogo", data.brandLogo)
+      if (data.productImage) form.append("productImage", data.productImage)
 
-      const response = await fetch("/api/generate-images", {
+      console.log("[v0] Sending to API...")
+
+      // 3. Fetch - NOTE: Do NOT set 'Content-Type': 'multipart/form-data' headers manually!
+      const response = await fetch("/api/generate-gemini", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: imagePrompt,
-          numImages: data.variations,
-          aspectRatio: data.aspectRatio,
-        }),
+        body: form,
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("[v0] API error:", errorData)
-        alert("Error generating images: " + (errorData.error || "Unknown error"))
-        setIsGenerating(false)
-        return
+        const err = await response.json()
+        throw new Error(err.error || "Generation failed")
       }
 
       const { images } = await response.json()
-      console.log("[v0] Received images from API:", images.length)
 
-      const newCreatives = images.map((imgDataUrl: string, i: number) => ({
-        id: i + 1,
-        image: imgDataUrl,
+      // 4. Map response to your UI
+      const newCreatives = images.map((imgUrl: string, i: number) => ({
+        id: Date.now() + i,
+        image: imgUrl,
         style: data.style,
         aspectRatio: data.aspectRatio,
-        caption: `${data.tagline} - Ad variation ${i + 1}. Perfect for your ${data.campaignGoal}.`,
-        dimensions: getDimensions(data.aspectRatio),
+        caption: `Generated for ${data.brandName}`,
+        dimensions: "1024x1024",
         saved: false,
       }))
 
       setGeneratedCreatives(newCreatives)
       setLastRun("now")
-      setInspectorData({
-        imagePrompt,
-        captionPrompt,
-      })
-    } catch (error) {
-      console.error("[v0] Error during generation:", error)
-      alert("Failed to generate images. Please try again.")
+
+    } catch (error: any) {
+      console.error("Error:", error)
+      alert(error.message)
     } finally {
       setIsGenerating(false)
     }
